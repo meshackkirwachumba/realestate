@@ -52,3 +52,60 @@ export const signin = async (req, res, next) => {
     .status(200)
     .json(validUserWithoutPassword);
 };
+
+export const google = async (req, res, next) => {
+  try {
+    //check if the user exists in the database
+    const userExists = await User.findOne({ email: req.body.email });
+
+    if (userExists) {
+      //create a login token
+      const token = Jwt.sign({ id: userExists._id }, process.env.JWT_SECRET, {
+        expiresIn: "1d",
+      });
+      const { password: pass, ...rest } = userExists._doc;
+      res
+        .cookie("access_token", token, {
+          httpOnly: true,
+          expiresIn: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        })
+        .status(200)
+        .json(rest);
+    } else {
+      //create a new user
+      const generatedPassword =
+        Math.random().toString(36).slice(-8) +
+        Math.random().toString(36).slice(-8);
+
+      const hashedPassword = await bcryptjs.hash(generatedPassword, 10);
+
+      const newUser = new User({
+        username:
+          req.body.name.split(" ").join("").toLowerCase() +
+          Math.random().toString(36).slice(-4),
+        email: req.body.email,
+        password: hashedPassword,
+        avatar: req.body.photo,
+      });
+
+      await newUser.save();
+
+      //create a login token
+      const token = Jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
+        expiresIn: "1d",
+      });
+
+      const { password: pass, ...rest } = newUser._doc;
+
+      res
+        .cookie("access_token", token, {
+          httpOnly: true,
+          expiresIn: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        })
+        .status(200)
+        .json(rest);
+    }
+  } catch (error) {
+    next(error);
+  }
+};

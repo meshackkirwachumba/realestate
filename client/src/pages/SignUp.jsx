@@ -1,6 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
+import OAuth from "../components/oauth/OAuth";
 
 function SignUp() {
   const [formData, setFormData] = useState({});
@@ -91,6 +92,7 @@ function SignUp() {
         >
           {loading ? "Loading..." : "Sign Up"}
         </button>
+        <OAuth />
       </form>
       <div className="flex justify-start gap-2 mt-2">
         <p>Already have an account?</p>
