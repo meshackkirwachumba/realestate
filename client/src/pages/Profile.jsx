@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import {
   getDownloadURL,
   getStorage,
@@ -14,11 +15,15 @@ import {
   updateUserSuccess,
   updateUserFailure,
   logout,
+  deleteUserStart,
+  deleteUserFailure,
+  deleteUserSuccess,
 } from "../redux/user/userSlice";
 
 function Profile() {
   const { currentUser, loading, error } = useSelector((state) => state.user);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const fileRef = useRef(null);
 
@@ -85,6 +90,28 @@ function Profile() {
       toast.success("Profile updated successfully");
     } catch (error) {
       dispatch(updateUserFailure(error.message));
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    try {
+      dispatch(deleteUserStart());
+      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+
+      if (data.success === false) {
+        dispatch(deleteUserFailure(data.message));
+        return;
+      } else {
+        dispatch(deleteUserSuccess(data));
+        toast.success("Account deleted successfully");
+        navigate("/signin");
+      }
+    } catch (error) {
+      dispatch(deleteUserFailure(error.message));
     }
   };
 
@@ -160,7 +187,10 @@ function Profile() {
       </form>
 
       <div className="flex justify-between mt-3 font-semibold">
-        <span className="text-rose-700 cursor-pointer hover:bg-slate-300 p-1 rounded-lg">
+        <span
+          onClick={handleDeleteUser}
+          className="text-rose-700 cursor-pointer hover:bg-slate-300 p-1 rounded-lg"
+        >
           Delete account
         </span>
         <span
