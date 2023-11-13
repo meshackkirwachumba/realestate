@@ -1,4 +1,5 @@
 import Jwt from "jsonwebtoken";
+import { errorHandler } from "./error.js";
 
 export const verifyToken = (req, res, next) => {
   //get token from cookie sent as a request

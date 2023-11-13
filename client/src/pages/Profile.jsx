@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRef } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-hot-toast";
 import {
   getDownloadURL,
   getStorage,
@@ -8,9 +9,16 @@ import {
   uploadBytesResumable,
 } from "firebase/storage";
 import { app } from "../firebase";
+import {
+  updateUserStart,
+  updateUserSuccess,
+  updateUserFailure,
+  logout,
+} from "../redux/user/userSlice";
 
 function Profile() {
-  const { currentUser } = useSelector((state) => state.user);
+  const { currentUser, loading, error } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
 
   const fileRef = useRef(null);
 
@@ -18,6 +26,10 @@ function Profile() {
   const [filePerc, setFilePerc] = useState(0);
   const [fileUploadErr, setFileUploadErr] = useState(false);
   const [formData, setFormData] = useState({});
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
+  };
 
   useEffect(() => {
     if (file) {
@@ -50,10 +62,44 @@ function Profile() {
     );
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      dispatch(updateUserStart());
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (data.success === false) {
+        dispatch(updateUserFailure(data.message));
+        return;
+      }
+
+      dispatch(updateUserSuccess(data));
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      dispatch(updateUserFailure(error.message));
+    }
+  };
+
+  const handleLogout = () => {
+    try {
+      dispatch(logout());
+      toast.success("Logout Successful");
+    } catch (error) {}
+  };
+
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl text-center font-semibold my-7">Profile</h1>
-      <form className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <span className="text-rose-700 text-center">{error ? error : ""}</span>
         <input
           hidden
           type="file"
@@ -85,25 +131,31 @@ function Profile() {
           type="text"
           placeholder="username"
           className="border border-gray-300 rounded-lg p-3 outline-none"
+          defaultValue={currentUser?.username}
+          onChange={handleChange}
         />
         <input
           id="email"
           type="email"
           placeholder="email"
           className="border border-gray-300 rounded-lg p-3 outline-none"
+          defaultValue={currentUser?.email}
+          onChange={handleChange}
         />
         <input
           id="password"
           type="password"
           placeholder="password"
           className="border border-gray-300 rounded-lg p-3 outline-none"
+          onChange={handleChange}
         />
 
         <button
+          disabled={loading}
           className="
         bg-slate-700 text-white rounded-lg p-3 font-semibold hover:opacity-95 disabled:opacity-50"
         >
-          update
+          {loading ? "Updating..." : "Update"}
         </button>
       </form>
 
@@ -111,7 +163,10 @@ function Profile() {
         <span className="text-rose-700 cursor-pointer hover:bg-slate-300 p-1 rounded-lg">
           Delete account
         </span>
-        <span className="text-rose-700 cursor-pointer hover:bg-slate-300 p-1 rounded-lg">
+        <span
+          onClick={handleLogout}
+          className="text-rose-700 cursor-pointer hover:bg-slate-300 p-1 rounded-lg"
+        >
           Logout
         </span>
       </div>
