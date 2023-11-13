@@ -14,10 +14,11 @@ import {
   updateUserStart,
   updateUserSuccess,
   updateUserFailure,
-  logout,
   deleteUserStart,
   deleteUserFailure,
   deleteUserSuccess,
+  signOutStart,
+  signOutSuccess,
 } from "../redux/user/userSlice";
 
 function Profile() {
@@ -115,11 +116,23 @@ function Profile() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      dispatch(logout());
+      dispatch(signOutStart());
+      const res = await fetch("/api/auth/signout");
+      const data = await res.json();
+
+      if (data.success === false) {
+        dispatch(signOutFailure(data.message));
+        return;
+      }
+
+      dispatch(signOutSuccess());
+
       toast.success("Logout Successful");
-    } catch (error) {}
+    } catch (error) {
+      dispatch(signOutFailure(error.message));
+    }
   };
 
   return (
