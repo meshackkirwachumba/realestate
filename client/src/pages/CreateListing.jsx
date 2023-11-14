@@ -6,17 +6,33 @@ import {
 } from "firebase/storage";
 import { useState } from "react";
 import { app } from "../firebase";
+import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 const CreateListing = () => {
+  const { currentUser } = useSelector((state) => state.user);
+  const navigate = useNavigate();
   const [files, setFiles] = useState([]);
   const [formData, setFormData] = useState({
     imageUrls: [],
+    name: "",
+    description: "",
+    address: "",
+    type: "rent",
+    bedrooms: 1,
+    bathrooms: 1,
+    regularPrice: 0,
+    discountedPrice: 0,
+    offer: false,
+    parking: false,
+    furnished: false,
   });
 
   const [imageUploadError, setImageUploadError] = useState("");
   const [uploadingImages, setUploadingImages] = useState(false);
-
-  console.log(formData);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleImagesUploadToFirebase = () => {
     if (files.length > 0 && files.length + formData.imageUrls.length < 7) {
@@ -79,18 +95,96 @@ const CreateListing = () => {
     });
   };
 
+  const handleChange = (e) => {
+    //set value for type ie rent or sale
+    if (e.target.id === "sale" || e.target.id === "rent") {
+      setFormData({
+        ...formData,
+        type: e.target.id,
+      });
+    }
+
+    //set value for offer, parking and furnished ie true or false
+    if (
+      e.target.id === "offer" ||
+      e.target.id === "parking" ||
+      e.target.id === "furnished"
+    ) {
+      setFormData({
+        ...formData,
+        [e.target.id]: e.target.checked,
+      });
+    }
+
+    if (
+      e.target.type === "number" ||
+      e.target.type === "text" ||
+      e.target.type === "textarea"
+    ) {
+      setFormData({
+        ...formData,
+        [e.target.id]: e.target.value,
+      });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (formData.imageUrls.length === 0) {
+        setError("Please upload at least one image");
+        return;
+      }
+      if (+formData.regularPrice < +formData.discountedPrice) {
+        setError("Discounted price cannot be greater than regular price");
+        return;
+      }
+      setLoading(true);
+      setError(false);
+      const res = await fetch("/api/listing/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          userRef: currentUser._id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success === false) {
+        setError(data.message);
+        setLoading(false);
+        return;
+      } else {
+        setLoading(false);
+        toast.success("Listing created successfully");
+        navigate(`/listing/${data._id}`);
+      }
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
   return (
     <main className="max-w-4xl mx-auto p-3">
       <h1 className="text-3xl font-semibold text-center my-7">
         Create a Listing
       </h1>
-      <form className="flex flex-col gap-4 sm:flex-row ">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-4 sm:flex-row "
+      >
         {/* 1st wrapper */}
         {/* text inputs */}
         <div className="flex flex-col gap-4 w-full flex-1">
           <input
             id="name"
             type="text"
+            onChange={handleChange}
+            value={formData.name}
             placeholder="Name"
             maxLength="62"
             minLength="10"
@@ -101,6 +195,8 @@ const CreateListing = () => {
           <textarea
             id="description"
             type="text"
+            onChange={handleChange}
+            value={formData.description}
             placeholder="Description"
             required
             autoComplete="off"
@@ -109,9 +205,10 @@ const CreateListing = () => {
           <input
             id="address"
             type="text"
+            onChange={handleChange}
+            value={formData.address}
             placeholder="Address"
             required
-            autoComplete="off"
             className="border rounded-lg p-3 outline-none focus:ring-2 focus:ring-slate-500 w-full"
           />
           {/* checkbox inputs ie true or false */}
@@ -120,6 +217,8 @@ const CreateListing = () => {
               <input
                 type="checkbox"
                 id="sale"
+                onChange={handleChange}
+                checked={formData.type === "sale"}
                 className="w-5 h-5 outline-none"
               />
               <span>Sell</span>
@@ -128,6 +227,8 @@ const CreateListing = () => {
               <input
                 type="checkbox"
                 id="rent"
+                onChange={handleChange}
+                checked={formData.type === "rent"}
                 className="w-5 h-5 outline-none"
               />
               <span>Rent</span>
@@ -136,6 +237,8 @@ const CreateListing = () => {
               <input
                 type="checkbox"
                 id="parking"
+                onChange={handleChange}
+                checked={formData.parking}
                 className="w-5 h-5 outline-none"
               />
               <span>parking spot</span>
@@ -144,6 +247,8 @@ const CreateListing = () => {
               <input
                 type="checkbox"
                 id="furnished"
+                onChange={handleChange}
+                checked={formData.furnished}
                 className="w-5 h-5 outline-none"
               />
               <span>Furnished</span>
@@ -152,6 +257,8 @@ const CreateListing = () => {
               <input
                 type="checkbox"
                 id="offer"
+                onChange={handleChange}
+                checked={formData.offer}
                 className="w-5 h-5 outline-none"
               />
               <span>Offer</span>
@@ -165,6 +272,8 @@ const CreateListing = () => {
                 type="number"
                 min="1"
                 max="10"
+                onChange={handleChange}
+                value={formData.bedrooms}
                 required
                 autoComplete="off"
                 className="border rounded-lg p-2 outline-none focus:ring-2 focus:ring-slate-500 max-w-[60px] w-full"
@@ -177,6 +286,8 @@ const CreateListing = () => {
                 type="number"
                 min="1"
                 max="5"
+                onChange={handleChange}
+                value={formData.bathrooms}
                 required
                 autoComplete="off"
                 className="border rounded-lg p-2 outline-none focus:ring-2 focus:ring-slate-500 max-w-[60px] w-full"
@@ -187,28 +298,34 @@ const CreateListing = () => {
               <input
                 id="regularPrice"
                 type="number"
+                onChange={handleChange}
+                value={formData.regularPrice}
                 required
                 autoComplete="off"
-                className="border rounded-lg p-2 outline-none focus:ring-2 focus:ring-slate-500 max-w-[60px] w-full"
+                className="border rounded-lg p-2 outline-none focus:ring-2 focus:ring-slate-500 max-w-[150px] w-full"
               />
               <div className="flex flex-col">
                 <p>Regular Price</p>
                 <span className="text-xs">(ksh / month)</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                id="discountedPrice"
-                type="number"
-                required
-                autoComplete="off"
-                className="border rounded-lg p-2 outline-none focus:ring-2 focus:ring-slate-500 max-w-[60px] w-full"
-              />
-              <div className="flex flex-col">
-                <p>Discounted Price</p>
-                <span className="text-xs">(ksh / month)</span>
+            {formData.offer && (
+              <div className="flex items-center gap-2">
+                <input
+                  id="discountedPrice"
+                  type="number"
+                  onChange={handleChange}
+                  value={formData.discountedPrice}
+                  required
+                  autoComplete="off"
+                  className="border rounded-lg p-2 outline-none focus:ring-2 focus:ring-slate-500 max-w-[150px] w-full"
+                />
+                <div className="flex flex-col">
+                  <p>Discounted Price</p>
+                  <span className="text-xs">(ksh / month)</span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
         {/* 2nd wrapper */}
@@ -225,7 +342,6 @@ const CreateListing = () => {
               type="file"
               id="images"
               accept="image/*"
-              required
               multiple
               className="w-full rounded-lg border border-gray-300 p-2 outline-none focus:ring-2 focus:ring-slate-500"
             />
@@ -267,6 +383,7 @@ const CreateListing = () => {
             ))}
           {/* submit button */}
           <button
+            disabled={loading || uploadingImages}
             className="
              bg-slate-700
              text-white
@@ -275,10 +392,12 @@ const CreateListing = () => {
                hover:shadow-lg
                hover:opacity-95
                disabled:opacity-75
+               disabled:cursor-not-allowed
          "
           >
-            Create Listing
+            {loading ? "Creating..." : "Create listing"}
           </button>
+          {error && <p className="text-red-500 text-xs">{error}</p>}
         </div>
       </form>
     </main>
