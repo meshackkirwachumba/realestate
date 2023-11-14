@@ -1,6 +1,84 @@
-import React from "react";
+import {
+  getDownloadURL,
+  getStorage,
+  ref,
+  uploadBytesResumable,
+} from "firebase/storage";
+import { useState } from "react";
+import { app } from "../firebase";
 
 const CreateListing = () => {
+  const [files, setFiles] = useState([]);
+  const [formData, setFormData] = useState({
+    imageUrls: [],
+  });
+
+  const [imageUploadError, setImageUploadError] = useState("");
+  const [uploadingImages, setUploadingImages] = useState(false);
+
+  console.log(formData);
+
+  const handleImagesUploadToFirebase = () => {
+    if (files.length > 0 && files.length + formData.imageUrls.length < 7) {
+      setUploadingImages(true);
+      setImageUploadError("");
+      // downloadable urls of uploaded images
+      const promises = [];
+
+      for (let i = 0; i < files.length; i++) {
+        promises.push(uploadImageToFirebase(files[i]));
+      }
+      Promise.all(promises)
+        .then((urls) => {
+          setFormData({
+            ...formData,
+            imageUrls: formData.imageUrls.concat(urls),
+          });
+          setImageUploadError("");
+          setUploadingImages(false);
+        })
+        .catch((error) => {
+          setImageUploadError("Image upload failed (2mb max per image)");
+          setUploadingImages(false);
+        });
+    } else {
+      setImageUploadError("You can only upload up to 6 images per listing");
+      setUploadingImages(false);
+    }
+  };
+
+  const uploadImageToFirebase = async (file) => {
+    return new Promise((resolve, reject) => {
+      const storage = getStorage(app);
+      const fileName = new Date().getTime() + file.name;
+      const storageRef = ref(storage, fileName);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log("Upload is " + progress + "% done");
+        },
+        (error) => {
+          reject(error);
+        },
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            resolve(downloadURL);
+          });
+        }
+      );
+    });
+  };
+
+  const handleRemoveImage = (index) => {
+    setFormData({
+      ...formData,
+      imageUrls: formData.imageUrls.filter((_, i) => i !== index),
+    });
+  };
+
   return (
     <main className="max-w-4xl mx-auto p-3">
       <h1 className="text-3xl font-semibold text-center my-7">
@@ -143,6 +221,7 @@ const CreateListing = () => {
           </p>
           <div className="flex gap-4">
             <input
+              onChange={(e) => setFiles(e.target.files)}
               type="file"
               id="images"
               accept="image/*"
@@ -151,14 +230,41 @@ const CreateListing = () => {
               className="w-full rounded-lg border border-gray-300 p-2 outline-none focus:ring-2 focus:ring-slate-500"
             />
             <button
+              disabled={uploadingImages}
+              type="button"
+              onClick={handleImagesUploadToFirebase}
               className="
               text-green-600 
               border-2 border-green-600 hover:shadow-lg
-              px-4 py-2 rounded-lg disabled:opacity-70 disabled:cursor-not-allowed"
+              px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Upload
+              {uploadingImages ? "Uploading..." : "Upload"}
             </button>
           </div>
+          <p className="text-red-500 text-xs">
+            {imageUploadError && imageUploadError}
+          </p>
+
+          {formData.imageUrls.length > 0 &&
+            formData.imageUrls.map((url, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 shadow-lg p-2"
+              >
+                <img
+                  src={url}
+                  alt="listing image"
+                  className="h-20 w-40 rounded-lg object-cover overflow-hidden"
+                />
+                <button
+                  onClick={() => handleRemoveImage(index)}
+                  type="button"
+                  className="text-red-500 font-semibold hover:opacity-95 px-3 py-2 rounded-lg hover:bg-rose-300 bg-rose-200"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
           {/* submit button */}
           <button
             className="
