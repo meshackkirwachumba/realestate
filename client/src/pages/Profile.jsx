@@ -33,6 +33,10 @@ function Profile() {
   const [filePerc, setFilePerc] = useState(0);
   const [fileUploadErr, setFileUploadErr] = useState(false);
   const [formData, setFormData] = useState({});
+  const [showListingsError, setShowListingsError] = useState(false);
+  const [userListings, setUserListings] = useState([]);
+
+  console.log(userListings);
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
@@ -136,6 +140,21 @@ function Profile() {
     }
   };
 
+  const handleShowListings = async () => {
+    try {
+      setShowListingsError(false);
+      const res = await fetch(`/api/user/listings/${currentUser._id}`);
+      const data = await res.json();
+
+      if (data.success === false) {
+        setShowListingsError(true);
+        return;
+      }
+      setUserListings(data);
+    } catch (error) {
+      setShowListingsError(true);
+    }
+  };
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl text-center font-semibold my-7">Profile</h1>
@@ -222,6 +241,51 @@ function Profile() {
           Logout
         </span>
       </div>
+
+      {/* show user listings */}
+      <button
+        onClick={handleShowListings}
+        className="text-green-700 w-full font-semibold hover:underline"
+      >
+        Show My listings
+      </button>
+      <p className="text-rose-700 mt-4">
+        {showListingsError && "Error occurred while fetching listings"}
+      </p>
+
+      {/* show user listings */}
+      {userListings && userListings.length > 0 && (
+        <div className="mt-3 shadow-lg p-3 ">
+          {userListings.map((listing) => (
+            <div
+              key={listing._id}
+              className="flex items-center justify-between"
+            >
+              <Link
+                to={`/listing/${listing._id}`}
+                className="flex items-center gap-3 flex-1"
+              >
+                <img
+                  src={listing.imageUrls[0]}
+                  alt="listing image"
+                  className="w-16 h-16 rounded-lg object-contain"
+                />
+                <p className="text-slate-700 font-semibold flex-1 truncate hover:underline">
+                  {listing.name}
+                </p>
+              </Link>
+              <div className="flex flex-col items-end">
+                <button className="text-green-700 text-normal hover:underline">
+                  Edit
+                </button>
+                <button className="text-rose-700 text-normal hover:underline">
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
