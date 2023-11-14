@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   getDownloadURL,
   getStorage,
@@ -197,6 +198,14 @@ function Profile() {
         >
           {loading ? "Updating..." : "Update"}
         </button>
+
+        <Link
+          to="/create-listing"
+          className="
+         bg-green-700 text-white rounded-lg p-3 font-semibold hover:opacity-95 text-center"
+        >
+          Create listing
+        </Link>
       </form>
 
       <div className="flex justify-between mt-3 font-semibold">
