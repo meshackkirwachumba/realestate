@@ -40,7 +40,7 @@ const Contact = ({ listing }) => {
           <Link
             to={`mailto:${landlord.email}?subject=Regarding ${listing.name}&body=${message}`}
             className="bg-slate-500 text-white px-3 py-2 rounded-md text-sm text-center max-w-[250px]
-            hover:opacity-95 "
+            hover:opacity-95"
           >
             Send Message
           </Link>
