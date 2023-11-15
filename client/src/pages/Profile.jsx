@@ -305,9 +305,11 @@ function Profile() {
                 </p>
               </Link>
               <div className="flex flex-col items-end">
-                <button className="text-green-700 text-normal hover:underline">
-                  Edit
-                </button>
+                <Link to={`/update-listing/${listing._id}`}>
+                  <button className="text-green-700 text-normal hover:underline">
+                    Edit
+                  </button>
+                </Link>
                 <button
                   disabled={deleteLoading}
                   onClick={() => handleDeleteListing(listing._id)}
