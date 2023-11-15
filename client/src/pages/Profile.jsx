@@ -35,8 +35,8 @@ function Profile() {
   const [formData, setFormData] = useState({});
   const [showListingsError, setShowListingsError] = useState(false);
   const [userListings, setUserListings] = useState([]);
-
-  console.log(userListings);
+  const [deleteError, setDeleteError] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
@@ -153,6 +153,36 @@ function Profile() {
       setUserListings(data);
     } catch (error) {
       setShowListingsError(true);
+    }
+  };
+
+  const handleDeleteListing = async (id) => {
+    try {
+      setDeleteLoading(true);
+      setDeleteError(false);
+      const res = await fetch(`/api/listing/delete/${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+
+      if (data.success === false) {
+        setDeleteLoading(false);
+        setDeleteError(true);
+        toast.error(data.message);
+        console.log(data.message);
+        return;
+      }
+
+      setDeleteLoading(false);
+      setDeleteError(false);
+      setUserListings((prev) => prev.filter((listing) => listing._id !== id));
+      toast.success("Listing Deleted Successfully");
+    } catch (error) {
+      setDeleteLoading(false);
+      setDeleteError(true);
+      toast.error(error.message);
+      console.log(error);
     }
   };
   return (
@@ -278,7 +308,11 @@ function Profile() {
                 <button className="text-green-700 text-normal hover:underline">
                   Edit
                 </button>
-                <button className="text-rose-700 text-normal hover:underline">
+                <button
+                  disabled={deleteLoading}
+                  onClick={() => handleDeleteListing(listing._id)}
+                  className="text-rose-700 text-normal hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   Delete
                 </button>
               </div>
