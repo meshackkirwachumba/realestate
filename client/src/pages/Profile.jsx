@@ -186,7 +186,7 @@ function Profile() {
     }
   };
   return (
-    <div className="p-3 max-w-lg mx-auto">
+    <div className="p-3 max-w-2xl mx-auto">
       <h1 className="text-3xl text-center font-semibold my-7">Profile</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <span className="text-rose-700 text-center">{error ? error : ""}</span>
@@ -300,8 +300,8 @@ function Profile() {
                   alt="listing image"
                   className="w-16 h-16 rounded-lg object-contain"
                 />
-                <p className="text-slate-700 font-semibold flex-1 truncate hover:underline">
-                  {listing.name}
+                <p className="truncate  overflow-hidden text-slate-700 font-semibold flex-1  hover:underline">
+                  {listing.name.toLowerCase()}
                 </p>
               </Link>
               <div className="flex flex-col items-end">

@@ -9,7 +9,6 @@ import {
   FaBath,
   FaBed,
   FaChair,
-  FaMapMarkedAlt,
   FaMapMarkerAlt,
   FaParking,
   FaShare,
@@ -34,7 +33,6 @@ const Listing = () => {
         const res = await fetch(`/api/listing/get/${params.id}`);
         const data = await res.json();
         if (data.success === false) {
-          console.log(data.message);
           setError(true);
           setLoading(false);
           return;
@@ -96,8 +94,10 @@ const Listing = () => {
 
           <div className="flex flex-col max-w-4xl mx-auto p-3 my-7 gap-4">
             <p className="text-2xl font-semibold">
-              {listing.name} - ksh {""}
-              {listing.offer ? listing.discountedPrice : listing.regularPrice}
+              {listing.name} - KES {""}
+              {listing.offer
+                ? listing.discountedPrice.toLocaleString("en-US")
+                : listing.regularPrice.toLocaleString("en-US")}
               {listing.type === "rent" && " / month"}
             </p>
             <p className="flex items-center mt-6 gap-2 text-slate-600 text-sm">
@@ -110,8 +110,7 @@ const Listing = () => {
               </p>
               {listing.offer && (
                 <p className="bg-green-900 w-full max-w-[200px] text-center text-white p-1 rounded-md">
-                  ksh {+listing.regularPrice - +listing.discountedPrice}{" "}
-                  discount
+                  KES {+listing.regularPrice - +listing.discountedPrice} OFF
                 </p>
               )}
             </div>

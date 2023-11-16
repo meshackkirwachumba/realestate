@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import ListingItem from "../components/ListingItem";
 
 const Search = () => {
   const [sidebarData, setSidebarData] = useState({
@@ -234,10 +235,26 @@ const Search = () => {
         </form>
       </div>
       {/* data */}
-      <div className=" flex-[4]">
-        <h1 className="text-3xl font-semibold border-b p-3 text-slate-700 mt-3">
+      <div className="flex-[4] p-7">
+        <h1 className="text-3xl font-semibold border-b  text-slate-700 my-3">
           Listing Results
         </h1>
+        <div className="flex flex-wrap gap-4">
+          {!loading && listings.length === 0 && (
+            <p className="text-xl text-center text-slate-700">
+              No listings found!
+            </p>
+          )}
+          {loading && (
+            <p className="text-xl text-center text-slate-700">Loading...</p>
+          )}
+
+          {!loading &&
+            listings.length > 0 &&
+            listings.map((listing) => (
+              <ListingItem key={listing.id} listing={listing} />
+            ))}
+        </div>
       </div>
     </div>
   );
