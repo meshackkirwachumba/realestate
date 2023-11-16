@@ -31,7 +31,7 @@ function Header() {
         <Link to="/">
           <h1 className="font-bold text-sm sm:text-xl flex flex-wrap">
             <span className="text-slate-500">Mobet</span>
-            <span className="text-slate-700">RealEstate</span>
+            <span className="text-slate-700 ml-[2px]">Estate</span>
           </h1>
         </Link>
 
